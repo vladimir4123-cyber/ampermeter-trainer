@@ -239,9 +239,9 @@ function buildGauge(){
     }
   }
 
-  // прозрачные зоны клика для шкалы и красной зоны
-  s+=`<path class="hot" data-part="scale" pointer-events="stroke" fill="none" stroke="transparent" stroke-width="30" d="M ${PX(0,r-12)} ${PY(0,r-12)} A ${r-12} ${r-12} 0 0 1 ${PX(2.5/GAUGE_MAX,r-12)} ${PY(2.5/GAUGE_MAX,r-12)}"/>`;
-  s+=`<path class="hot" data-part="redzone" pointer-events="stroke" fill="none" stroke="transparent" stroke-width="30" d="M ${PX(2.5/GAUGE_MAX,r-12)} ${PY(2.5/GAUGE_MAX,r-12)} A ${r-12} ${r-12} 0 0 1 ${PX(1,r-12)} ${PY(1,r-12)}"/>`;
+  // широкие прозрачные зоны клика для шкалы и красной зоны (включают деления и цифры)
+  s+=`<path class="hot" data-part="scale" pointer-events="stroke" fill="none" stroke="transparent" stroke-width="60" d="M ${PX(0,r-22)} ${PY(0,r-22)} A ${r-22} ${r-22} 0 0 1 ${PX(2.5/GAUGE_MAX,r-22)} ${PY(2.5/GAUGE_MAX,r-22)}"/>`;
+  s+=`<path class="hot" data-part="redzone" pointer-events="stroke" fill="none" stroke="transparent" stroke-width="60" d="M ${PX(2.5/GAUGE_MAX,r-22)} ${PY(2.5/GAUGE_MAX,r-22)} A ${r-22} ${r-22} 0 0 1 ${PX(1,r-22)} ${PY(1,r-22)}"/>`;
 
   // буква А
   s+=`<text x="${cx}" y="${cy-40}" font-size="26" font-weight="800" text-anchor="middle" fill="#111" font-family="Georgia,serif">A</text>`;
@@ -255,6 +255,7 @@ function buildGauge(){
 
   // СТРЕЛКА (поворачивается через transform, кликабельна)
   s+=`<g id="needle" class="hot" data-part="needle" data-glow="needle" style="transition:transform .55s cubic-bezier(.34,1.35,.5,1);transform-origin:${cx}px ${cy}px;">
+        <polygon points="${cx-12},${cy+14} ${cx+12},${cy+14} ${cx+6},${cy-r+22} ${cx-6},${cy-r+22}" fill="transparent"/>
         <polygon points="${cx-3.5},${cy+12} ${cx+3.5},${cy+12} ${cx+1},${cy-r+22} ${cx-1},${cy-r+22}" fill="#111"/>
         <circle cx="${cx}" cy="${cy+12}" r="3.5" fill="#111"/>
       </g>`;
