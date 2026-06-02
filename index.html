@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Тренажёр: Амперметр</title>
+<style>
+  :root{
+    --bg:#0d1330;
+    --panel:#161e44;
+    --panel2:#1d2754;
+    --accent:#ffd23f;
+    --accent2:#6c5ce7;
+    --green:#2ecc71;
+    --red:#ff5e5e;
+    --text:#e9ecff;
+    --muted:#9aa3d4;
+    --wire:#7f8cc9;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;
+    background:radial-gradient(circle at 50% -10%,#1b2456,#0d1330 60%);
+    color:var(--text);
+    min-height:100vh;
+    padding:18px;
+  }
+  h1{
+    text-align:center;
+    font-size:clamp(22px,5vw,34px);
+    margin:6px 0 2px;
+  }
+  .sub{text-align:center;color:var(--muted);margin-bottom:18px;font-size:15px;}
+  .wrap{
+    max-width:1080px;margin:0 auto;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:18px;
+  }
+  @media(max-width:820px){.wrap{grid-template-columns:1fr;}}
+  .card{
+    background:var(--panel);
+    border:1px solid rgba(255,255,255,.07);
+    border-radius:20px;
+    padding:20px;
+    box-shadow:0 12px 40px rgba(0,0,0,.35);
+  }
+  .card h2{margin:0 0 12px;font-size:18px;display:flex;align-items:center;gap:8px;}
+  /* ===== Gauge ===== */
+  .gauge-wrap{display:flex;flex-direction:column;align-items:center;}
+  svg{display:block;width:100%;height:auto;}
+  .reading{
+    margin-top:6px;font-size:40px;font-weight:800;color:var(--accent);
+    font-variant-numeric:tabular-nums;
+  }
+  .reading small{font-size:20px;color:var(--muted);font-weight:600;}
+  /* ===== Controls ===== */
+  .control{margin:16px 0;}
+  .control label{display:flex;justify-content:space-between;font-size:14px;margin-bottom:6px;}
+  .control label b{color:var(--accent);}
+  input[type=range]{
+    width:100%;height:8px;border-radius:8px;appearance:none;
+    background:linear-gradient(90deg,var(--accent2),var(--accent));
+    outline:none;cursor:pointer;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    appearance:none;width:24px;height:24px;border-radius:50%;
+    background:#fff;border:3px solid var(--accent2);cursor:pointer;
+    box-shadow:0 2px 8px rgba(0,0,0,.4);
+  }
+  .switch-row{display:flex;align-items:center;gap:14px;margin-top:8px;}
+  .btn{
+    border:none;border-radius:14px;padding:12px 18px;font-size:16px;font-weight:700;
+    cursor:pointer;transition:.15s;color:#0d1330;
+  }
+  .btn.on{background:var(--green);}
+  .btn.off{background:var(--red);color:#fff;}
+  .btn:active{transform:scale(.96);}
+  .formula{
+    margin-top:14px;background:var(--panel2);border-radius:14px;padding:14px;
+    text-align:center;font-size:18px;line-height:1.6;
+  }
+  .formula .big{font-size:24px;font-weight:800;color:var(--accent);}
+  /* ===== Circuit ===== */
+  .hint{font-size:13px;color:var(--muted);margin-top:10px;line-height:1.5;}
+  /* ===== Parts / learn ===== */
+  .parts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px;}
+  .part{
+    background:var(--panel2);border-radius:14px;padding:12px;cursor:pointer;
+    border:2px solid transparent;transition:.15s;
+  }
+  .part:hover{border-color:var(--accent2);}
+  .part.active{border-color:var(--accent);background:#26306a;}
+  .part .t{font-weight:700;font-size:15px;}
+  .part .d{font-size:12.5px;color:var(--muted);margin-top:4px;line-height:1.4;}
+  /* ===== Quiz ===== */
+  #quiz .q{font-size:17px;font-weight:600;margin-bottom:14px;line-height:1.5;}
+  .opt{
+    display:block;width:100%;text-align:left;background:var(--panel2);
+    border:2px solid transparent;border-radius:12px;padding:12px 14px;margin-bottom:8px;
+    color:var(--text);font-size:15px;cursor:pointer;transition:.12s;
+  }
+  .opt:hover{border-color:var(--accent2);}
+  .opt.correct{border-color:var(--green);background:#173d2a;}
+  .opt.wrong{border-color:var(--red);background:#3d1717;}
+  .feedback{margin-top:10px;font-size:15px;font-weight:600;min-height:22px;}
+  .danger{color:var(--red);font-weight:700;margin-top:8px;text-align:center;min-height:20px;}
+</style>
+</head>
+<body>
+  <h1>⚡ Тренажёр «Амперметр»</h1>
+  <div class="sub">Прибор, который измеряет силу тока. Покрути регуляторы и смотри, как двигается стрелка.</div>
+
+  <div class="wrap">
+    <!-- LEFT: Gauge + circuit -->
+    <div class="card gauge-wrap">
+      <h2>🔌 Прибор и цепь</h2>
+      <!-- Ammeter gauge -->
+      <svg viewBox="0 0 340 270" id="gauge"></svg>
+      <div class="reading"><span id="readout">0.00</span> <small>А (ампер)</small></div>
+
+      <!-- Circuit -->
+      <svg viewBox="0 0 320 170" id="circuit" style="margin-top:10px;"></svg>
+      <div class="danger" id="danger"></div>
+      <div class="hint">🟡 Жёлтые точки — это электрический ток. Чем их больше и быстрее они бегут — тем больше сила тока, и тем ярче горит лампочка.</div>
+    </div>
+
+    <!-- RIGHT: controls -->
+    <div class="card">
+      <h2>🎛️ Управление</h2>
+
+      <div class="switch-row">
+        <span>Выключатель:</span>
+        <button class="btn on" id="switchBtn">ВКЛ</button>
+      </div>
+
+      <div class="control">
+        <label>🔋 Напряжение батарейки <b><span id="vVal">6</span> В</b></label>
+        <input type="range" id="volt" min="0" max="10" step="0.5" value="6">
+      </div>
+
+      <div class="control">
+        <label>🎚️ Сопротивление (реостат) <b><span id="rVal">6</span> Ом</b></label>
+        <input type="range" id="res" min="2" max="20" step="0.5" value="6">
+      </div>
+
+      <div class="formula">
+        Закон Ома: <span class="big">I = U / R</span><br>
+        <span id="calc">I = 6 В / 6 Ом = 1.00 А</span>
+      </div>
+
+      <h2 style="margin-top:22px;">🧩 Из чего состоит прибор</h2>
+      <div class="parts" id="parts"></div>
+      <div class="hint" id="partInfo">👆 Нажми на деталь, чтобы узнать, для чего она нужна.</div>
+    </div>
+
+    <!-- QUIZ full width -->
+    <div class="card" id="quiz" style="grid-column:1/-1;">
+      <h2>🎯 Проверь себя</h2>
+      <div class="q" id="qText"></div>
+      <div id="qOpts"></div>
+      <div class="feedback" id="qFeedback"></div>
+    </div>
+  </div>
+
+<script>
+const GAUGE_MAX = 3;      // макс. шкала, А (как у школьного амперметра)
+const START=-52, END=52;  // угол отклонения стрелки, градусы
+
+// ---------- состояние ----------
+let on = true;
+let V = 6, R = 6;
+
+// ---------- рисуем реалистичный школьный амперметр ----------
+function buildGauge(){
+  const cx=170, cy=188, r=150;
+  const rad=t=>(START+(END-START)*t)*Math.PI/180;
+  const PX=(t,rr)=>cx+Math.sin(rad(t))*rr;
+  const PY=(t,rr)=>cy-Math.cos(rad(t))*rr;
+
+  let s = `<defs>
+    <linearGradient id="case" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f4eedb"/><stop offset="55%" stop-color="#e7ddc1"/><stop offset="100%" stop-color="#d1c5a3"/>
+    </linearGradient>
+    <radialGradient id="face" cx="50%" cy="38%" r="78%">
+      <stop offset="0%" stop-color="#ffffff"/><stop offset="78%" stop-color="#f8f5ec"/><stop offset="100%" stop-color="#ece6d3"/>
+    </radialGradient>
+    <radialGradient id="post" cx="35%" cy="30%" r="80%">
+      <stop offset="0%" stop-color="#ffffff"/><stop offset="100%" stop-color="#7c7c7c"/>
+    </radialGradient>
+    <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.40"/>
+      <stop offset="45%" stop-color="#ffffff" stop-opacity="0.06"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>`;
+
+  // корпус прибора
+  s+=`<rect x="10" y="8" width="320" height="252" rx="20" fill="url(#case)" stroke="#9a8c66" stroke-width="2"/>`;
+  // винтики по углам
+  [[28,26],[312,26],[28,242],[312,242]].forEach(([x,y])=>{
+    s+=`<circle cx="${x}" cy="${y}" r="5" fill="#cfc4a3" stroke="#8a7d5a" stroke-width="1"/>`+
+       `<line x1="${x-3}" y1="${y}" x2="${x+3}" y2="${y}" stroke="#8a7d5a" stroke-width="1.2"/>`;
+  });
+  // тёмная рамка под стекло
+  s+=`<rect x="26" y="24" width="288" height="172" rx="12" fill="#1b1c20"/>`;
+  // циферблат
+  s+=`<rect x="34" y="32" width="272" height="156" rx="7" fill="url(#face)"/>`;
+
+  // красная зона перегрузки (2.5 → 3 А)
+  s+=`<path d="M ${PX(2.5/GAUGE_MAX,r-4)} ${PY(2.5/GAUGE_MAX,r-4)} A ${r-4} ${r-4} 0 0 1 ${PX(1,r-4)} ${PY(1,r-4)}" fill="none" stroke="#d23b2e" stroke-width="5"/>`;
+  // дуга шкалы
+  s+=`<path d="M ${PX(0,r-4)} ${PY(0,r-4)} A ${r-4} ${r-4} 0 0 1 ${PX(1,r-4)} ${PY(1,r-4)}" fill="none" stroke="#222" stroke-width="1.4"/>`;
+
+  // деления: 0..3 шаг 0.2, крупные на целых
+  const steps=Math.round(GAUGE_MAX/0.2);
+  for(let i=0;i<=steps;i++){
+    const val=i*0.2, t=val/GAUGE_MAX;
+    const big=Math.abs(val-Math.round(val))<0.001;
+    const r2=big?r-20:r-12;
+    s+=`<line x1="${PX(t,r-4)}" y1="${PY(t,r-4)}" x2="${PX(t,r2)}" y2="${PY(t,r2)}" stroke="#1a1a1a" stroke-width="${big?2.6:1.0}"/>`;
+    if(big){
+      s+=`<text x="${PX(t,r-36)}" y="${PY(t,r-36)+6}" font-size="20" font-weight="700" text-anchor="middle" fill="#111" font-family="Georgia,serif">${Math.round(val)}</text>`;
+    }
+  }
+
+  // буква А
+  s+=`<text x="${cx}" y="${cy-40}" font-size="26" font-weight="800" text-anchor="middle" fill="#111" font-family="Georgia,serif">A</text>`;
+  // метрологические символы: магнитоэлектрическая система + постоянный ток + класс точности
+  s+=`<g transform="translate(${cx-34},${cy-22})" stroke="#333" fill="none" stroke-width="1.8">
+        <path d="M-7 5 v-4 a7 7 0 0 1 14 0 v4"/>
+      </g>`;
+  s+=`<rect x="${cx-43}" y="${cy-18}" width="4" height="4" fill="#333"/><rect x="${cx-29}" y="${cy-18}" width="4" height="4" fill="#333"/>`;
+  s+=`<text x="${cx+8}" y="${cy-14}" font-size="14" text-anchor="middle" fill="#333">⎓  1,5</text>`;
+
+  // винт корректора нуля (на корпусе под циферблатом)
+  s+=`<circle cx="${cx}" cy="210" r="6" fill="#d9d2bd" stroke="#7a6f4f" stroke-width="1.2"/>`+
+     `<line x1="${cx-4}" y1="210" x2="${cx+4}" y2="210" stroke="#7a6f4f" stroke-width="1.4"/>`;
+
+  // СТРЕЛКА (поворачивается через transform)
+  s+=`<g id="needle" style="transition:transform .55s cubic-bezier(.34,1.35,.5,1);transform-origin:${cx}px ${cy}px;">
+        <polygon points="${cx-3.5},${cy+12} ${cx+3.5},${cy+12} ${cx+1},${cy-r+22} ${cx-1},${cy-r+22}" fill="#111"/>
+        <circle cx="${cx}" cy="${cy+12}" r="3.5" fill="#111"/>
+      </g>`;
+  // ось стрелки
+  s+=`<circle cx="${cx}" cy="${cy}" r="9" fill="#3a3a3a" stroke="#111" stroke-width="1.5"/>`;
+  s+=`<circle cx="${cx}" cy="${cy}" r="3" fill="#9a9a9a"/>`;
+
+  // клеммы снизу
+  s+=`<circle cx="120" cy="234" r="16" fill="#2a2a2a" stroke="#000" stroke-width="1.5"/><circle cx="120" cy="234" r="9" fill="url(#post)"/>`+
+     `<text x="120" y="220" font-size="17" font-weight="800" text-anchor="middle" fill="#222">−</text>`;
+  s+=`<circle cx="220" cy="234" r="16" fill="#c0392b" stroke="#7a1f15" stroke-width="1.5"/><circle cx="220" cy="234" r="9" fill="url(#post)"/>`+
+     `<text x="220" y="220" font-size="18" font-weight="800" text-anchor="middle" fill="#c0392b">+</text>`;
+
+  // блик на стекле
+  s+=`<path d="M34 32 H306 V66 Q170 112 34 88 Z" fill="url(#glass)"/>`;
+
+  document.getElementById('gauge').innerHTML=s;
+}
+
+// ---------- рисуем цепь ----------
+function buildCircuit(){
+  // прямоугольная цепь: батарея(низ) -> выключатель -> амперметр(верх) -> лампа -> назад
+  let s = `<defs>
+    <radialGradient id="bulb" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#fff7c2"/><stop offset="100%" stop-color="#ffb300"/>
+    </radialGradient></defs>`;
+  // провода (рамка)
+  s += `<rect x="40" y="30" width="240" height="110" rx="10" fill="none" stroke="var(--wire)" stroke-width="4"/>`;
+  // ток — точки по периметру
+  s += `<g id="flow"></g>`;
+  // батарея (внизу)
+  s += `<rect x="120" y="124" width="80" height="32" rx="6" fill="#161e44" stroke="var(--wire)" stroke-width="3"/>`;
+  s += `<line x1="138" y1="130" x2="138" y2="150" stroke="#fff" stroke-width="5"/>`;       // +
+  s += `<line x1="158" y1="134" x2="158" y2="146" stroke="#fff" stroke-width="3"/>`;       // -
+  s += `<text x="178" y="146" font-size="13" fill="var(--muted)">🔋</text>`;
+  // выключатель (левая сторона)
+  s += `<circle cx="40" cy="85" r="5" fill="var(--wire)"/>`;
+  s += `<line id="swArm" x1="40" y1="85" x2="40" y2="55" stroke="var(--accent)" stroke-width="4" stroke-linecap="round"/>`;
+  // амперметр (вверху, в разрыв провода)
+  s += `<circle cx="160" cy="30" r="20" fill="#fffdf3" stroke="#c0392b" stroke-width="3"/>`;
+  s += `<text x="160" y="37" font-size="20" font-weight="800" text-anchor="middle" fill="#c0392b">A</text>`;
+  s += `<text x="160" y="68" font-size="11" text-anchor="middle" fill="var(--muted)">амперметр</text>`;
+  // лампа (правая сторона)
+  s += `<circle id="lampGlow" cx="280" cy="85" r="30" fill="#ffd23f" opacity="0"/>`;
+  s += `<circle id="lamp" cx="280" cy="85" r="16" fill="#2a2f55" stroke="var(--wire)" stroke-width="3"/>`;
+  s += `<path d="M274 85 q6 -10 12 0 M274 85 q6 10 12 0" stroke="#888" stroke-width="2" fill="none" id="filament"/>`;
+  s += `<text x="280" y="125" font-size="11" text-anchor="middle" fill="var(--muted)">лампа</text>`;
+  document.getElementById('circuit').innerHTML=s;
+}
+
+// ---------- обновление ----------
+function update(){
+  const I = on ? Math.min(V/R, GAUGE_MAX*1.6) : 0;   // реальный ток
+  const shown = Math.min(I, GAUGE_MAX);              // стрелка не уходит за шкалу
+  const t = shown/GAUGE_MAX;
+  const ang = START+(END-START)*t;
+  const needle=document.getElementById('needle');
+  if(needle) needle.style.transform=`rotate(${ang}deg)`;
+  document.getElementById('readout').textContent=I.toFixed(2);
+
+  // формула
+  document.getElementById('calc').innerHTML = on
+    ? `I = ${V} В / ${R} Ом = <b>${(V/R).toFixed(2)} А</b>`
+    : `Цепь разомкнута → тока нет, I = 0 А`;
+
+  // выключатель визуально
+  const swArm=document.getElementById('swArm');
+  if(swArm){
+    swArm.setAttribute('x2', on?40:62);
+    swArm.setAttribute('y2', on?55:60);
+    swArm.setAttribute('stroke', on?'var(--green)':'var(--red)');
+  }
+
+  // лампа: яркость от тока
+  const bright=Math.min(I/(GAUGE_MAX),1);
+  const lamp=document.getElementById('lamp');
+  const glow=document.getElementById('lampGlow');
+  if(lamp){
+    lamp.setAttribute('fill', bright>0.02?`rgb(${255},${Math.round(150+105*bright)},${Math.round(60*bright)})`:'#2a2f55');
+    glow.setAttribute('opacity', (bright*0.6).toFixed(2));
+    glow.setAttribute('r', 24+bright*22);
+  }
+
+  // зашкал / перегрузка
+  const d=document.getElementById('danger');
+  if(on && I>GAUGE_MAX) d.textContent='⚠️ Стрелка зашкалила! Ток больше, чем рассчитан прибор — так амперметр можно сжечь.';
+  else d.textContent='';
+
+  drawFlow(on?bright:0);
+}
+
+// ---------- анимация тока (точки) ----------
+let flowOffset=0, flowSpeed=0;
+function drawFlow(intensity){ flowSpeed=intensity; }
+const perim=[]; // точки периметра рамки
+(function buildPerim(){
+  const x0=40,y0=30,w=240,h=110;
+  const pts=[];
+  const step=4;
+  // верх → право → низ → лево (по часовой)
+  for(let x=x0;x<x0+w;x+=step)pts.push([x,y0]);
+  for(let y=y0;y<y0+h;y+=step)pts.push([x0+w,y]);
+  for(let x=x0+w;x>x0;x-=step)pts.push([x,y0+h]);
+  for(let y=y0+h;y>y0;y-=step)pts.push([x0,y]);
+  perim.push(...pts);
+})();
+function animateFlow(){
+  const g=document.getElementById('flow');
+  if(g){
+    flowOffset+=flowSpeed*2.2;
+    let dots='';
+    const n=perim.length;
+    const count=20;
+    for(let i=0;i<count;i++){
+      const idx=Math.floor((flowOffset+ i*(n/count))%n);
+      const p=perim[idx];
+      if(p && flowSpeed>0.01) dots+=`<circle cx="${p[0]}" cy="${p[1]}" r="3.2" fill="#ffd23f"/>`;
+    }
+    g.innerHTML=dots;
+  }
+  requestAnimationFrame(animateFlow);
+}
+
+// ---------- детали прибора ----------
+const PARTS=[
+  ['Шкала','Размеченная дуга с цифрами. Показывает, сколько ампер протекает по цепи.'],
+  ['Стрелка','Лёгкая стрелка на оси. Чем больше ток — тем сильнее она отклоняется вправо.'],
+  ['Клеммы «+» и «−»','Зажимы для проводов. Важно соблюдать полярность: «+» к плюсу батарейки.'],
+  ['Корпус и ось','Внутри катушка и магнит. Ток создаёт магнитное поле, которое и поворачивает стрелку.'],
+];
+function buildParts(){
+  const c=document.getElementById('parts');
+  c.innerHTML=PARTS.map((p,i)=>`<div class="part" data-i="${i}"><div class="t">${p[0]}</div><div class="d">${p[1]}</div></div>`).join('');
+}
+
+// ---------- квиз ----------
+const QUIZ=[
+  ['Что измеряет амперметр?',['Силу тока (амперы)','Температуру','Напряжение (вольты)'],0],
+  ['Как амперметр включают в цепь?',['Последовательно — в разрыв провода','Параллельно лампе','Вообще не подключают'],0],
+  ['Если увеличить сопротивление, ток...',['Уменьшится','Увеличится','Не изменится'],0],
+  ['Что произойдёт, если разомкнуть выключатель?',['Стрелка покажет 0 — тока нет','Стрелка прыгнет на максимум','Лампа загорится ярче'],0],
+];
+let qIdx=0;
+function showQuiz(){
+  const q=QUIZ[qIdx];
+  document.getElementById('qText').textContent=`Вопрос ${qIdx+1} из ${QUIZ.length}. ${q[0]}`;
+  document.getElementById('qFeedback').textContent='';
+  document.getElementById('qOpts').innerHTML=q[1].map((o,i)=>`<button class="opt" data-i="${i}">${o}</button>`).join('');
+}
+document.getElementById('qOpts').addEventListener('click',e=>{
+  const b=e.target.closest('.opt'); if(!b)return;
+  const q=QUIZ[qIdx]; const pick=+b.dataset.i;
+  document.querySelectorAll('.opt').forEach(o=>o.style.pointerEvents='none');
+  if(pick===q[2]){
+    b.classList.add('correct');
+    document.getElementById('qFeedback').textContent='✅ Верно! Молодец.';
+    document.getElementById('qFeedback').style.color='var(--green)';
+  }else{
+    b.classList.add('wrong');
+    document.querySelectorAll('.opt')[q[2]].classList.add('correct');
+    document.getElementById('qFeedback').textContent='❌ Не совсем. Правильный ответ подсвечен зелёным.';
+    document.getElementById('qFeedback').style.color='var(--red)';
+  }
+  setTimeout(()=>{qIdx=(qIdx+1)%QUIZ.length;showQuiz();},1800);
+});
+
+// ---------- события ----------
+document.getElementById('volt').addEventListener('input',e=>{V=+e.target.value;document.getElementById('vVal').textContent=V;update();});
+document.getElementById('res').addEventListener('input',e=>{R=+e.target.value;document.getElementById('rVal').textContent=R;update();});
+document.getElementById('switchBtn').addEventListener('click',e=>{
+  on=!on;
+  e.target.textContent=on?'ВКЛ':'ВЫКЛ';
+  e.target.className='btn '+(on?'on':'off');
+  update();
+});
+document.getElementById('parts').addEventListener('click',e=>{
+  const p=e.target.closest('.part'); if(!p)return;
+  document.querySelectorAll('.part').forEach(x=>x.classList.remove('active'));
+  p.classList.add('active');
+  document.getElementById('partInfo').textContent='💡 '+PARTS[+p.dataset.i][1];
+});
+
+// ---------- старт ----------
+buildGauge();
+buildCircuit();
+buildParts();
+showQuiz();
+update();
+animateFlow();
+</script>
+</body>
+</html>
