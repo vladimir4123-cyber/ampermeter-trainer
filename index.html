@@ -106,6 +106,18 @@
   .opt.wrong{border-color:var(--red);background:#3d1717;}
   .feedback{margin-top:10px;font-size:15px;font-weight:600;min-height:22px;}
   .danger{color:var(--red);font-weight:700;margin-top:8px;text-align:center;min-height:20px;}
+  /* ===== Clickable parts on the device ===== */
+  #gauge .hot{cursor:pointer;}
+  #gauge [data-glow]{transition:filter .15s;}
+  #gauge .sel{filter:drop-shadow(0 0 4px #ffb800) drop-shadow(0 0 9px #ffd23f);}
+  .tap-hint{margin-top:8px;font-size:13px;color:var(--muted);text-align:center;line-height:1.45;}
+  .callout{
+    margin-top:10px;background:var(--panel2);border:1px solid var(--accent);
+    border-radius:14px;padding:12px 14px;font-size:14px;line-height:1.55;display:none;
+    width:100%;
+  }
+  .callout.show{display:block;}
+  .callout b{color:var(--accent);}
 </style>
 </head>
 <body>
@@ -119,6 +131,8 @@
       <!-- Ammeter gauge -->
       <svg viewBox="0 0 340 270" id="gauge"></svg>
       <div class="reading"><span id="readout">0.00</span> <small>А (ампер)</small></div>
+      <div class="tap-hint">👆 Нажми на любую часть прибора — стрелку, шкалу, клеммы, винт — чтобы узнать, что это.</div>
+      <div class="callout" id="gaugeCallout"></div>
 
       <!-- Circuit -->
       <svg viewBox="0 0 320 170" id="circuit" style="margin-top:10px;"></svg>
@@ -209,9 +223,9 @@ function buildGauge(){
   s+=`<rect x="34" y="32" width="272" height="156" rx="7" fill="url(#face)"/>`;
 
   // красная зона перегрузки (2.5 → 3 А)
-  s+=`<path d="M ${PX(2.5/GAUGE_MAX,r-4)} ${PY(2.5/GAUGE_MAX,r-4)} A ${r-4} ${r-4} 0 0 1 ${PX(1,r-4)} ${PY(1,r-4)}" fill="none" stroke="#d23b2e" stroke-width="5"/>`;
+  s+=`<path data-glow="redzone" d="M ${PX(2.5/GAUGE_MAX,r-4)} ${PY(2.5/GAUGE_MAX,r-4)} A ${r-4} ${r-4} 0 0 1 ${PX(1,r-4)} ${PY(1,r-4)}" fill="none" stroke="#d23b2e" stroke-width="5"/>`;
   // дуга шкалы
-  s+=`<path d="M ${PX(0,r-4)} ${PY(0,r-4)} A ${r-4} ${r-4} 0 0 1 ${PX(1,r-4)} ${PY(1,r-4)}" fill="none" stroke="#222" stroke-width="1.4"/>`;
+  s+=`<path data-glow="scale" d="M ${PX(0,r-4)} ${PY(0,r-4)} A ${r-4} ${r-4} 0 0 1 ${PX(1,r-4)} ${PY(1,r-4)}" fill="none" stroke="#222" stroke-width="1.4"/>`;
 
   // деления: 0..3 шаг 0.2, крупные на целых
   const steps=Math.round(GAUGE_MAX/0.2);
@@ -225,36 +239,45 @@ function buildGauge(){
     }
   }
 
+  // прозрачные зоны клика для шкалы и красной зоны
+  s+=`<path class="hot" data-part="scale" pointer-events="stroke" fill="none" stroke="transparent" stroke-width="30" d="M ${PX(0,r-12)} ${PY(0,r-12)} A ${r-12} ${r-12} 0 0 1 ${PX(2.5/GAUGE_MAX,r-12)} ${PY(2.5/GAUGE_MAX,r-12)}"/>`;
+  s+=`<path class="hot" data-part="redzone" pointer-events="stroke" fill="none" stroke="transparent" stroke-width="30" d="M ${PX(2.5/GAUGE_MAX,r-12)} ${PY(2.5/GAUGE_MAX,r-12)} A ${r-12} ${r-12} 0 0 1 ${PX(1,r-12)} ${PY(1,r-12)}"/>`;
+
   // буква А
   s+=`<text x="${cx}" y="${cy-40}" font-size="26" font-weight="800" text-anchor="middle" fill="#111" font-family="Georgia,serif">A</text>`;
-  // метрологические символы: магнитоэлектрическая система + постоянный ток + класс точности
-  s+=`<g transform="translate(${cx-34},${cy-22})" stroke="#333" fill="none" stroke-width="1.8">
-        <path d="M-7 5 v-4 a7 7 0 0 1 14 0 v4"/>
+  // метрологические символы: магнитоэлектрическая система + постоянный ток + класс точности (кликабельны)
+  s+=`<g class="hot" data-part="marks" data-glow="marks">
+        <rect x="${cx-52}" y="${cy-32}" width="104" height="28" fill="transparent"/>
+        <g transform="translate(${cx-34},${cy-22})" stroke="#333" fill="none" stroke-width="1.8"><path d="M-7 5 v-4 a7 7 0 0 1 14 0 v4"/></g>
+        <rect x="${cx-43}" y="${cy-18}" width="4" height="4" fill="#333"/><rect x="${cx-29}" y="${cy-18}" width="4" height="4" fill="#333"/>
+        <text x="${cx+8}" y="${cy-14}" font-size="14" text-anchor="middle" fill="#333">⎓  1,5</text>
       </g>`;
-  s+=`<rect x="${cx-43}" y="${cy-18}" width="4" height="4" fill="#333"/><rect x="${cx-29}" y="${cy-18}" width="4" height="4" fill="#333"/>`;
-  s+=`<text x="${cx+8}" y="${cy-14}" font-size="14" text-anchor="middle" fill="#333">⎓  1,5</text>`;
 
-  // винт корректора нуля (на корпусе под циферблатом)
-  s+=`<circle cx="${cx}" cy="210" r="6" fill="#d9d2bd" stroke="#7a6f4f" stroke-width="1.2"/>`+
-     `<line x1="${cx-4}" y1="210" x2="${cx+4}" y2="210" stroke="#7a6f4f" stroke-width="1.4"/>`;
-
-  // СТРЕЛКА (поворачивается через transform)
-  s+=`<g id="needle" style="transition:transform .55s cubic-bezier(.34,1.35,.5,1);transform-origin:${cx}px ${cy}px;">
+  // СТРЕЛКА (поворачивается через transform, кликабельна)
+  s+=`<g id="needle" class="hot" data-part="needle" data-glow="needle" style="transition:transform .55s cubic-bezier(.34,1.35,.5,1);transform-origin:${cx}px ${cy}px;">
         <polygon points="${cx-3.5},${cy+12} ${cx+3.5},${cy+12} ${cx+1},${cy-r+22} ${cx-1},${cy-r+22}" fill="#111"/>
         <circle cx="${cx}" cy="${cy+12}" r="3.5" fill="#111"/>
       </g>`;
-  // ось стрелки
-  s+=`<circle cx="${cx}" cy="${cy}" r="9" fill="#3a3a3a" stroke="#111" stroke-width="1.5"/>`;
-  s+=`<circle cx="${cx}" cy="${cy}" r="3" fill="#9a9a9a"/>`;
+  // ось стрелки + винт корректора нуля (кликабельны вместе)
+  s+=`<g class="hot" data-part="axis" data-glow="axis">
+        <circle cx="${cx}" cy="${cy}" r="9" fill="#3a3a3a" stroke="#111" stroke-width="1.5"/>
+        <circle cx="${cx}" cy="${cy}" r="3" fill="#9a9a9a"/>
+        <circle cx="${cx}" cy="210" r="6" fill="#d9d2bd" stroke="#7a6f4f" stroke-width="1.2"/>
+        <line x1="${cx-4}" y1="210" x2="${cx+4}" y2="210" stroke="#7a6f4f" stroke-width="1.4"/>
+      </g>`;
 
-  // клеммы снизу
-  s+=`<circle cx="120" cy="234" r="16" fill="#2a2a2a" stroke="#000" stroke-width="1.5"/><circle cx="120" cy="234" r="9" fill="url(#post)"/>`+
-     `<text x="120" y="220" font-size="17" font-weight="800" text-anchor="middle" fill="#222">−</text>`;
-  s+=`<circle cx="220" cy="234" r="16" fill="#c0392b" stroke="#7a1f15" stroke-width="1.5"/><circle cx="220" cy="234" r="9" fill="url(#post)"/>`+
-     `<text x="220" y="220" font-size="18" font-weight="800" text-anchor="middle" fill="#c0392b">+</text>`;
+  // клеммы снизу (кликабельны)
+  s+=`<g class="hot" data-part="termMinus" data-glow="termMinus">
+        <circle cx="120" cy="234" r="16" fill="#2a2a2a" stroke="#000" stroke-width="1.5"/><circle cx="120" cy="234" r="9" fill="url(#post)"/>
+        <text x="120" y="220" font-size="17" font-weight="800" text-anchor="middle" fill="#222">−</text>
+      </g>`;
+  s+=`<g class="hot" data-part="termPlus" data-glow="termPlus">
+        <circle cx="220" cy="234" r="16" fill="#c0392b" stroke="#7a1f15" stroke-width="1.5"/><circle cx="220" cy="234" r="9" fill="url(#post)"/>
+        <text x="220" y="220" font-size="18" font-weight="800" text-anchor="middle" fill="#c0392b">+</text>
+      </g>`;
 
-  // блик на стекле
-  s+=`<path d="M34 32 H306 V66 Q170 112 34 88 Z" fill="url(#glass)"/>`;
+  // блик на стекле (не перехватывает клики)
+  s+=`<path d="M34 32 H306 V66 Q170 112 34 88 Z" fill="url(#glass)" pointer-events="none"/>`;
 
   document.getElementById('gauge').innerHTML=s;
 }
@@ -364,15 +387,29 @@ function animateFlow(){
 }
 
 // ---------- детали прибора ----------
-const PARTS=[
-  ['Шкала','Размеченная дуга с цифрами. Показывает, сколько ампер протекает по цепи.'],
-  ['Стрелка','Лёгкая стрелка на оси. Чем больше ток — тем сильнее она отклоняется вправо.'],
-  ['Клеммы «+» и «−»','Зажимы для проводов. Важно соблюдать полярность: «+» к плюсу батарейки.'],
-  ['Корпус и ось','Внутри катушка и магнит. Ток создаёт магнитное поле, которое и поворачивает стрелку.'],
-];
+const PART_INFO={
+  scale:    ['Шкала','Дуга с делениями и цифрами 0–3. По положению стрелки на ней считывают силу тока в амперах.'],
+  redzone:  ['Красная зона','Опасный участок в конце шкалы. Если стрелка зашла сюда — ток слишком большой, прибор можно сжечь.'],
+  needle:   ['Стрелка','Лёгкая стрелка на оси. Чем больше ток проходит через прибор, тем сильнее она отклоняется вправо.'],
+  axis:     ['Ось и винт корректора','Стрелка вращается на оси. Маленьким винтом стрелку выставляют ровно на 0 перед измерением.'],
+  termPlus: ['Клемма «+»','Красный зажим. Сюда подключают провод от «плюса» источника тока. Полярность важна!'],
+  termMinus:['Клемма «−»','Чёрный зажим. Сюда идёт провод к «минусу». Если перепутать «+» и «−», стрелка пойдёт в обратную сторону.'],
+  marks:    ['Обозначения','⎓ — прибор для постоянного тока; «1,5» — класс точности (погрешность); значок-подковка — магнитоэлектрическая система (катушка + магнит).'],
+};
+const CARD_KEYS=['scale','needle','termPlus','termMinus','axis','marks'];
 function buildParts(){
   const c=document.getElementById('parts');
-  c.innerHTML=PARTS.map((p,i)=>`<div class="part" data-i="${i}"><div class="t">${p[0]}</div><div class="d">${p[1]}</div></div>`).join('');
+  c.innerHTML=CARD_KEYS.map(k=>`<div class="part" data-key="${k}"><div class="t">${PART_INFO[k][0]}</div><div class="d">${PART_INFO[k][1]}</div></div>`).join('');
+}
+function selectPart(key){
+  if(!PART_INFO[key])return;
+  document.querySelectorAll('#gauge [data-glow]').forEach(e=>e.classList.remove('sel'));
+  const g=document.querySelector('#gauge [data-glow="'+key+'"]'); if(g)g.classList.add('sel');
+  document.querySelectorAll('.part').forEach(x=>x.classList.toggle('active', x.dataset.key===key));
+  const co=document.getElementById('gaugeCallout');
+  co.innerHTML='<b>'+PART_INFO[key][0]+'.</b> '+PART_INFO[key][1];
+  co.classList.add('show');
+  document.getElementById('partInfo').textContent='💡 '+PART_INFO[key][1];
 }
 
 // ---------- квиз ----------
@@ -416,10 +453,10 @@ document.getElementById('switchBtn').addEventListener('click',e=>{
   update();
 });
 document.getElementById('parts').addEventListener('click',e=>{
-  const p=e.target.closest('.part'); if(!p)return;
-  document.querySelectorAll('.part').forEach(x=>x.classList.remove('active'));
-  p.classList.add('active');
-  document.getElementById('partInfo').textContent='💡 '+PARTS[+p.dataset.i][1];
+  const p=e.target.closest('.part'); if(p)selectPart(p.dataset.key);
+});
+document.getElementById('gauge').addEventListener('click',e=>{
+  const h=e.target.closest('[data-part]'); if(h)selectPart(h.dataset.part);
 });
 
 // ---------- старт ----------
