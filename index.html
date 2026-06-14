@@ -107,6 +107,31 @@
   .part h3{margin:0; font-size:14px;}
   .part p{margin:6px 0 0; font-size:13px; color:var(--muted); display:none;}
   .part.sel p{display:block;}
+  /* ---------- about / theory ---------- */
+  .info{
+    border:1px solid var(--line); border-radius:16px; padding:14px 16px; margin-bottom:12px;
+    background:rgba(255,255,255,.03);
+  }
+  .info h3{margin:0 0 8px; font-size:16px;}
+  .info p{margin:0 0 8px; font-size:14px; color:#d7dcf2;}
+  .info p:last-child{margin-bottom:0;}
+  .info.tip{background:rgba(255,209,102,.08); border-color:rgba(255,209,102,.35);}
+  .timeline{list-style:none; margin:6px 0 0; padding:0; position:relative;}
+  .timeline li{
+    position:relative; padding:0 0 14px 22px; font-size:14px; color:#d7dcf2;
+    border-left:2px solid rgba(108,155,255,.4); margin-left:5px;
+  }
+  .timeline li:last-child{border-left-color:transparent; padding-bottom:0;}
+  .timeline li::before{
+    content:''; position:absolute; left:-7px; top:4px; width:11px; height:11px;
+    border-radius:50%; background:var(--accent2); border:2px solid var(--card2);
+  }
+  .timeline b{color:var(--accent);}
+  .uses{display:flex; flex-wrap:wrap; gap:8px;}
+  .use{
+    font-size:13px; padding:7px 11px; border-radius:11px;
+    background:rgba(108,155,255,.12); border:1px solid rgba(108,155,255,.25);
+  }
   /* ---------- tasks ---------- */
   #panelTask{position:relative;}
   .taskhead{display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px;}
@@ -178,6 +203,7 @@
       <button class="tab active" data-mode="study">🔍 Изучаем</button>
       <button class="tab" data-mode="division">📏 Цена деления</button>
       <button class="tab" data-mode="reading">🎯 Показания</button>
+      <button class="tab" data-mode="about">📖 О приборе</button>
     </div>
 
     <!-- ---- режим: изучение ---- -->
@@ -230,6 +256,51 @@
         <h3 id="resTitle"></h3>
         <p id="resText"></p>
         <button class="nextbtn" id="againBtn">🔄 Ещё раз</button>
+      </div>
+    </div>
+
+    <!-- ---- режим: о приборе (теория и история) ---- -->
+    <div id="panelAbout" hidden>
+      <div class="info">
+        <h3>🔍 Что это и зачем он нужен</h3>
+        <p>Амперметр измеряет <b>силу тока</b> — то есть сколько электрического заряда проходит по проводу каждую секунду. Измеряется она в <b>амперах (А)</b>.</p>
+        <p>Ток нельзя увидеть глазами, поэтому без амперметра не узнать, работает ли цепь, хватает ли тока лампочке или мотору и не перегружены ли провода. Любое измерение электрической цепи начинается именно с него.</p>
+      </div>
+
+      <div class="info">
+        <h3>👨‍🔬 В честь кого назван прибор</h3>
+        <p>Прибор назван в честь французского физика <b>Андре-Мари Ампера</b> (1775–1836). Он создал целую науку об электрическом токе и сам дал ей имя — <i>электродинамика</i>.</p>
+        <p>В 1881 году на международном съезде учёных в его честь назвали единицу силы тока — <b>ампер</b>. Поэтому «ампер-метр» дословно значит «измеритель ампер».</p>
+      </div>
+
+      <div class="info">
+        <h3>📜 Как его придумали</h3>
+        <p>У амперметра нет одного изобретателя — он рождался шаг за шагом почти 70 лет:</p>
+        <ul class="timeline">
+          <li><b>1820</b> — датчанин <b>Ганс Кристиан Эрстед</b> заметил: рядом с проводом, по которому идёт ток, поворачивается стрелка компаса. Так поняли, что <i>ток создаёт магнитное поле</i> — на этом и работает любой стрелочный амперметр.</li>
+          <li><b>1820</b> — немец <b>Иоганн Швейггер</b> намотал провод в катушку («мультипликатор») — получился первый прибор, замечающий даже слабый ток. Его назвали <i>гальванометром</i> — это прадедушка амперметра.</li>
+          <li><b>1882</b> — французы <b>Жак-Арсен д’Арсонваль и Марсель Депре</b> соединили неподвижный магнит и подвижную катушку со стрелкой. Стрелка стала отклоняться <i>ровно пропорционально току</i>. Именно эта «магнитоэлектрическая система» спрятана за значком-подковкой ⊓ на циферблате нашего прибора.</li>
+          <li><b>1888</b> — американец <b>Эдвард Вестон</b> сделал прочный переносной прибор с пружинками, которые возвращают стрелку на ноль. Такими амперметрами пользуются до сих пор — в том числе школьными.</li>
+        </ul>
+      </div>
+
+      <div class="info">
+        <h3>🛠️ Где его применяют</h3>
+        <div class="uses">
+          <span class="use">🏠 Электрики — проверяют проводку в доме</span>
+          <span class="use">🚗 Авто — следят за зарядкой аккумулятора</span>
+          <span class="use">🔌 Зарядки и блоки питания</span>
+          <span class="use">🏭 Заводы — контроль моторов и станков</span>
+          <span class="use">☀️ Солнечные панели и электротранспорт</span>
+          <span class="use">🔬 Лаборатории и наука</span>
+          <span class="use">🏥 Медицинские приборы</span>
+          <span class="use">🎓 Школа — закон Ома и устройство цепей</span>
+        </div>
+      </div>
+
+      <div class="info tip">
+        <h3>💡 Важное правило</h3>
+        <p>Амперметр всегда подключают <b>последовательно</b> — в разрыв цепи, чтобы весь ток прошёл через него. Если подключить его параллельно (как вольтметр), получится короткое замыкание и прибор можно сжечь.</p>
       </div>
     </div>
   </section>
@@ -743,9 +814,10 @@ function setMode(m) {
   mode = m;
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.mode === m));
   $('panelStudy').hidden = m !== 'study';
-  $('panelTask').hidden = m === 'study';
+  $('panelTask').hidden = !(m === 'division' || m === 'reading');
+  $('panelAbout').hidden = m !== 'about';
   $('priceChip').style.display = m === 'study' ? '' : 'none';
-  if (m === 'study') {
+  if (m === 'study' || m === 'about') {
     const spec = JSON.parse(JSON.stringify(DEFAULT_SPEC));
     spec.active = range === 'A' ? 'top' : 'bottom';
     applyDial(spec);
